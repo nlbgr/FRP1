@@ -1,11 +1,13 @@
 package ex1_fract
 
-import ex1_fract.Fract._
-
 object FractApp {
 
   def main(args: Array[String]): Unit = {
-    println ("Hello World")
+    println(Fract(1, 2) + Fract(1, 2) * Fract(2, 3).neg())
+    println(Fract(2, 4))
+    println(Fract(1, 2) < Fract(2, 3))
+    println(1 + Fract(1, 2))
+    println(1 + 1\2)
   }
 
 }

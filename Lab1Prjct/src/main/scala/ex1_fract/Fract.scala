@@ -27,7 +27,7 @@ final class Fract(_n: Int, _d: Int = 1) extends Ordered[Fract] {
   override def compare(that: Fract): Int = {
     val a = numer * that.denom
     val b = that.numer * denom
-    a compare b
+    a - b
   }
 }
 
