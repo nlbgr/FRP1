@@ -58,7 +58,34 @@ def simplify(expr: Expr): Expr = {
   expr match {
     case e@Lit(_) => e // expr wäre nicht typ Lit sondern Expr
     case e@Var(_) => e
-
+    case Neg(s) =>
+      simplify(s) match {
+        case Lit(v) => Lit(-v)
+        case Neg(e) => e
+        case e@_ => Neg(e)
+      }
+    case Recip(s) =>
+      simplify(s) match {
+        case Lit(v) => Lit(1/v)
+        case Recip(e) => e
+        case e@_ => Recip(e)
+      }
+    case Add(l, r) =>
+      (simplify(l), simplify(r)) match {
+        case (Lit(vl), Lit(vr)) => Lit(vl + vr)
+        case (Lit(0), vr) => vr
+        case (vl, Lit(0)) => vl
+        case (vl, vr) => Add(vl, vr)
+      }
+    case Mult(l, r) =>
+      (simplify(l), simplify(r)) match {
+        case (Lit(vl), Lit(vr)) => Lit(vl * vr)
+        case (Lit(0), _) => Lit(0)
+        case (_, Lit(0)) => Lit(0)
+        case (Lit(1), vr) => vr
+        case (vl, Lit(1)) => vl
+        case (vl, vr) => Mult(vl, vr)
+      }
   }
 }
   
