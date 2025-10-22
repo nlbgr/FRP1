@@ -24,6 +24,8 @@ final class Fract(_n: Int, _d: Int = 1) extends Ordered[Fract] {
     case that: Int => numer == that && denom == 1
     case _ => false
 
+  override def hashCode(): Int = Objects.hash(numer, denom)
+
   override def compare(that: Fract): Int = {
     val a = numer * that.denom
     val b = that.numer * denom
