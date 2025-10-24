@@ -7,7 +7,21 @@ import scala.util.{Try, Success, Failure}
 
 // Task 5.5: Expression evaluation with Option
 
-def evalTry(expr: Expr, bds: Map[String, Double]): Try[Double] = ???
+def evalTry(expr: Expr, bds: Map[String, Double]): Try[Double] =
+  expr match {
+    case Lit(v) => Success(v)
+    case Var(n) => Try(bds.apply(n))
+    case Add(l, r) => evalTry(l, bds).flatMap(lr =>
+      evalTry(r, bds).map(rr => lr + rr)
+    )
+    case Mult(l, r) => evalTry(l, bds).flatMap(lr =>
+      evalTry(r, bds).map(rr => lr * rr)
+    )
+    case Min(s) => evalTry(s, bds).map(s => -s)
+    case Rec(s) => evalTry(s, bds).flatMap(s =>
+      if (s == 0) Failure(Exception("Division by 0")) else Success(1/s)
+    )
+  }
 
 object Task5_5ExprEvalTry extends App {
 
@@ -19,6 +33,7 @@ object Task5_5ExprEvalTry extends App {
 
   val e2 = Mult(Lit(1), Min(Var("u")))
   val tryR2 = evalTry(e2, bds)
+  //println(tryR2.get)
   println (s"${e2.toString} = ${tryR2.map(_.toString).getOrElse("undefined")}")
 
   val e3 = Mult(Lit(1), Rec(Var("z")))

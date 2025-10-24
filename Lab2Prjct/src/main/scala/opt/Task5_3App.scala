@@ -2,7 +2,12 @@ package opt
 
 // Task 5.3: Method option
 
-def option[A](body: => A): Option[A] = ???
+def option[A](body: => A): Option[A] = {
+  try {
+    Some(body)
+  } catch
+    case e: Exception => None
+}
 
 object Task5_3App extends App {
 
@@ -10,7 +15,9 @@ object Task5_3App extends App {
 
   // a)	x / y
 
-  val optXY : Option[Int] = ???
+  val optXY : Option[Int] = option {
+    bds("x") / bds("y")
+  }
 
   optXY match {
     case Some(xy) => println(s"x / y = $xy")
@@ -19,7 +26,9 @@ object Task5_3App extends App {
 
   // b)	x / z
 
-  val optXZ : Option[Int] = ???
+  val optXZ : Option[Int] = option {
+    bds("x") / bds("z")
+  }
 
   optXZ match {
     case Some(xz) => println(s"x / z = $xz")
@@ -28,7 +37,9 @@ object Task5_3App extends App {
 
   // c)	x / u
 
-  val optXU : Option[Int] = ???
+  val optXU : Option[Int] = option {
+    bds("x") / bds("u")
+  }
 
   optXU match {
     case Some(xu) => println(s"x / u = $xu")

@@ -6,7 +6,21 @@ import java.util.Scanner
 
 // Task 5.5: Expression evaluation with Option
 
-def evalOption(expr: Expr, bds: Map[String, Double]): Option[Double] = ???
+def evalOption(expr: Expr, bds: Map[String, Double]): Option[Double] =
+  expr match {
+    case Lit(v) => Some(v)
+    case Var(n) => bds.get(n)
+    case Add(l, r) => evalOption(l, bds).flatMap(lr =>
+      evalOption(r, bds).map(rr => lr + rr)
+    )
+    case Mult(l, r) => evalOption(l, bds).flatMap(lr =>
+      evalOption(r, bds).map(rr => lr * rr)
+    )
+    case Min(s) => evalOption(s, bds).map(s => -s)
+    case Rec(s) => evalOption(s, bds).flatMap(s =>
+      if (s == 0) None else Some(1/s)
+    )
+  }
 
 object Task5_5ExprEvalOption extends App {
 

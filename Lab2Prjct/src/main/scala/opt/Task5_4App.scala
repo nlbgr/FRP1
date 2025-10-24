@@ -11,7 +11,11 @@ object Task5_4App extends App {
 
   // a) x / y
 
-  val optR1 : Option[Int] = ???
+  val optR1 : Option[Int] = bds.get("x").flatMap(x =>
+    bds.get("y").flatMap(y =>
+      if (y == 0) None else Some(x / y)
+    )
+  )
 
   optR1 match {
     case Some(r) => println(s"x / y = $r")
@@ -20,7 +24,11 @@ object Task5_4App extends App {
 
   // b) x / z
 
-  val optR2 : Option[Int] = ???
+  val optR2 : Option[Int] = bds.get("x").flatMap(x =>
+    bds.get("z").flatMap(z =>
+      if (z == 0) None else Some(x / z)
+    )
+  )
 
   optR2 match {
     case Some(r) => println(s"x / z = $r")
@@ -30,7 +38,11 @@ object Task5_4App extends App {
 
   // c) x / u
 
-  val optR3 : Option[Int] = ???
+  val optR3 : Option[Int] = bds.get("x").flatMap(x =>
+    bds.get("u").flatMap(u =>
+      if (u == 0) None else Some(x / u)
+    )
+  )
 
   optR3 match {
     case Some(r) => println(s"x / u = $r")
@@ -39,7 +51,13 @@ object Task5_4App extends App {
 
   // d) x / (y * z)
 
-  val optR4 : Option[Int] = ???
+  val optR4 : Option[Int] = bds.get("x").flatMap(x =>
+    bds.get("y").flatMap(y =>
+      bds.get("z").flatMap(z =>
+        if (z == 0 || y == 0) None else Some(x / (y * z))
+      )
+    )
+  )
 
   optR4 match {
     case Some(r) => println(s"x / (y * z) = $r")
