@@ -28,19 +28,19 @@ object Task6_2_TreeReducible {
     val namesReducible = Reducible(nameTree)
 
     //a) count the elements
-    val n = ???
+    val n = namesReducible.reduceMap(name => 1)
     println(s"Number elements = $n")
 
     //b) concatenate the elements to a single string
-    val one = ???
+    val one = namesReducible.reduce
     println(s"Concatenated = $one")
 
     //c) compute length of all strings
-    val length = ???
+    val length = namesReducible.reduceMap(_.length)
     println(s"Length of elements = $length")
 
     //d) create a set of the elements
-    val setOfNames = ???
+    val setOfNames = namesReducible.reduceMap(Set(_))(using setMonoid)
     println(s"Set of elements = $setOfNames")
   }
 
