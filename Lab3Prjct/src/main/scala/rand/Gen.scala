@@ -1,6 +1,6 @@
 package rand
 
-import rand.Gen.intsFromTo
+import rand.Gen.{intsFromTo, unit}
 import stream.*
 
 trait Gen[A] extends (Long => (A, Long)) {
@@ -34,7 +34,10 @@ trait Gen[A] extends (Long => (A, Long)) {
   def listsOfLengths(minLen: Int, maxLen: Int): Gen[List[A]] = intsFromTo(minLen, maxLen).flatMap(x => lists(x))
 
   // TODO: Tast 9.5
-  def stream(seed: Long) : Stream[A] = ???
+  def stream(seed: Long) : Stream[A] = {
+    val (a, s) = this(seed)
+    Stream(a, stream(s))
+  }
 
   def stream : Stream[A] = stream(System.currentTimeMillis())
 }
