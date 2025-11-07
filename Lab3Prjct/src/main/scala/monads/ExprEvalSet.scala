@@ -8,7 +8,32 @@ import scala.util.{Failure, Success, Try}
 object ExprEvalSet {
 
   def eval(expr: Expr, bds: Map[String, Set[Double]]): Set[Double] =
-    ???
+    expr match {
+      case Lit(v) =>
+        Set(v)
+      case Var(n) =>
+        bds.getOrElse(n, Set.empty)
+      case Add(l, r) =>
+        for {
+          lv <- eval(l, bds)
+          rv <- eval(r, bds)
+        } yield lv + rv
+      case Mult(l, r) =>
+        for {
+          lv <- eval(l, bds)
+          rv <- eval(r, bds)
+        } yield lv * rv
+      case Min(s) =>
+        for {
+          v <- eval(s, bds)
+        } yield -v
+      case Rec(s) =>
+        for {
+          v <- eval(s, bds)
+          if v != 0   // avoid division by zero
+        } yield 1 / v
+    }
+
 
   def main(args: Array[String]): Unit = {
 

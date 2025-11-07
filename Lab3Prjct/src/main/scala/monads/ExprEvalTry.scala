@@ -8,8 +8,37 @@ import scala.util.{Failure, Success, Try}
 
 object ExprEvalTry {
 
+  import scala.util.{Try, Success, Failure}
+
   def eval(expr: Expr, bds: Map[String, Double]): Try[Double] =
-    ???
+    expr match {
+      case Lit(v) =>
+        Success(v)
+      case Var(n) =>
+        bds.get(n) match
+          case Some(v) => Success(v)
+          case None => Failure(new NoSuchElementException(s"Unknown variable: $n"))
+      case Add(l, r) =>
+        for {
+          lv <- eval(l, bds)
+          rv <- eval(r, bds)
+        } yield lv + rv
+      case Mult(l, r) =>
+        for {
+          lv <- eval(l, bds)
+          rv <- eval(r, bds)
+        } yield lv * rv
+      case Min(s) =>
+        for {
+          v <- eval(s, bds)
+        } yield -v
+      case Rec(s) =>
+        for {
+          v <- eval(s, bds)
+          res <- if v != 0 then Success(1 / v)
+          else Failure(new Exception("Division by zero"))
+        } yield res
+    }
 
   def main(args: Array[String]) : Unit = {
 
