@@ -18,16 +18,11 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 val NR_MESSAGES = 200
 val MESSAGES_PER_SECOND = 100
 val PARALLELISM = 4 //Runtime.getRuntime.availableProcessors
-val BULK_SIZE = 5
+val BULK_SIZE = 100
 val TIME_WINDOW = 200.millis
 
 @main
 def ioTApp(): Unit =
-
-  val actorSystem = DefaultActorSystem()
-  given ActorSystem[?] = actorSystem
-  given ExecutionContext = actorSystem.executionContext
-
   //
   // Identity Service
   // ----------------
@@ -68,7 +63,18 @@ def ioTApp(): Unit =
   def measurementsServiceWithActor(dbActor: ActorRef[DatabaseActor.Command], parallelism: Int = PARALLELISM, bulkSize: Int = BULK_SIZE)
                                   (using actorSystem: ActorSystem[?], timeout: Timeout, ec: ExecutionContext):
   Flow[String, String, NotUsed] = {
-    ???
+    Flow[String]
+      .mapAsyncUnordered(parallelism)(json => Future {
+        Measurement.fromJson(json)
+      })
+      .collect {
+        case Right(measurement) => measurement
+        // Left would be error case
+      }
+      .mapAsyncUnordered(parallelism*bulkSize)(measurement =>
+        dbActor ? ((replyTo: ActorRef[Acknowledgement]) => Insert(measurement, replyTo))
+      )
+      .map(ack => ack.toJson)
   }
 
   //
@@ -78,7 +84,20 @@ def ioTApp(): Unit =
   // Each acknowledgement from the repository is converted into JSON. Parallelism controls concurrency.
   //
   def measurementsService(parallelism: Int = PARALLELISM, bulkSize: Int = BULK_SIZE, timeWindow: FiniteDuration = TIME_WINDOW)
-                         (using ec: ExecutionContext): Flow[String, String, NotUsed] = ???
+                         (using ec: ExecutionContext): Flow[String, String, NotUsed] = {
+    val repository = Repository()
+    Flow[String]
+      .mapAsyncUnordered(parallelism)(json => Future {
+        Measurement.fromJson(json)
+      })
+      .collect {
+        case Right(measurement) => measurement
+        // Left would be error case
+      }
+      .groupedWithin(bulkSize, timeWindow)
+      .mapAsyncUnordered(parallelism)(measBundle => repository.bulkInsertAsync(measBundle))
+      .mapConcat(measBundle => measBundle.map(meas => meas.ack().toJson))
+  }
 
   //
   // Main Application
@@ -87,14 +106,41 @@ def ioTApp(): Unit =
   // to send messages through the selected Flow. Measures throughput using the MeasureUtil.
   //
 
+  val _ = LoggerFactory.getLogger("bootstrap")
+
   // Version 1
+//  val actorSystem = DefaultActorSystem()
+//  given ActorSystem[?] = actorSystem
 //  val server: Server = ServerSimulator(NR_MESSAGES, MESSAGES_PER_SECOND).withTracing()
 //  val done = server.handleMessages(identityService())
 //  Await.ready(done, Duration.Inf)
 
   // Version 2
+//  val actorSystem = DefaultActorSystem()
+//  given ActorSystem[?] = actorSystem
+//  given ExecutionContext = actorSystem.executionContext
+//  val server: Server = ServerSimulator(NR_MESSAGES, MESSAGES_PER_SECOND).withTracing()
+//  val done = server.handleMessages(simpleMeasurementsService())
+//  Await.ready(done, Duration.Inf)
+
+  // Version 3
+//  val actorSystem = DefaultActorSystem(DatabaseActor())
+//  given ActorSystem[DatabaseActor.Command] = actorSystem
+//  given ExecutionContext = actorSystem.executionContext
+//  given Timeout = 500.millis
+//  val server: Server = ServerSimulator(NR_MESSAGES, MESSAGES_PER_SECOND).withTracing()
+//  val done = server.handleMessages(measurementsServiceWithActor(actorSystem))
+//  Await.ready(done, Duration.Inf)
+
+  // Version 4
+  val actorSystem = DefaultActorSystem(DatabaseActor())
+  given ActorSystem[DatabaseActor.Command] = actorSystem
+  given ExecutionContext = actorSystem.executionContext
+  given Timeout = 500.millis
   val server: Server = ServerSimulator(NR_MESSAGES, MESSAGES_PER_SECOND).withTracing()
-  val done = server.handleMessages(simpleMeasurementsService())
+  val done = measure(server.handleMessages(measurementsService())) {
+    time => println(s"throughput = ${NR_MESSAGES / time}")
+  }
   Await.ready(done, Duration.Inf)
 
   //
