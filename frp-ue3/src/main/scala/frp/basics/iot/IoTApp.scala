@@ -17,12 +17,16 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 val NR_MESSAGES = 200
 val MESSAGES_PER_SECOND = 100
-val PARALLELISM = Runtime.getRuntime.availableProcessors
+val PARALLELISM = 4 //Runtime.getRuntime.availableProcessors
 val BULK_SIZE = 5
 val TIME_WINDOW = 200.millis
 
 @main
 def ioTApp(): Unit =
+
+  val actorSystem = DefaultActorSystem()
+  given ActorSystem[?] = actorSystem
+  given ExecutionContext = actorSystem.executionContext
 
   //
   // Identity Service
@@ -30,7 +34,9 @@ def ioTApp(): Unit =
   // A trivial pass-through Flow that simply returns the input strings as output.
   // Useful for testing the message handling infrastructure without any processing.
   //
-  def identityService(): Flow[String, String, NotUsed] = ???
+  def identityService(): Flow[String, String, NotUsed] = {
+    Flow[String].map(req => req)
+  }
 
   //
   // Simple Measurements Service
@@ -38,7 +44,20 @@ def ioTApp(): Unit =
   // Processes JSON messages into Measurement objects, inserts them individually into the repository,
   // and converts the acknowledgement into JSON. Backpressure and parallelism are handled by mapAsync.
   //
-  def simpleMeasurementsService(parallelism: Int = PARALLELISM)(using ec: ExecutionContext): Flow[String, String, NotUsed] = ???
+  def simpleMeasurementsService(parallelism: Int = PARALLELISM)(using ec: ExecutionContext): Flow[String, String, NotUsed] = {
+    val repository = Repository().withTracing()
+
+    Flow[String]
+      .mapAsyncUnordered(parallelism)(json => Future {
+        Measurement.fromJson(json)
+      })
+      .collect {
+        case Right(measurement) => measurement
+          // Left would be error case
+      }
+      .mapAsyncUnordered(parallelism)(repository.insertAsync)
+      .map(measurement => measurement.ack().toJson)
+  }
 
   //
   // Measurements Service Using Actor
@@ -48,7 +67,9 @@ def ioTApp(): Unit =
   //
   def measurementsServiceWithActor(dbActor: ActorRef[DatabaseActor.Command], parallelism: Int = PARALLELISM, bulkSize: Int = BULK_SIZE)
                                   (using actorSystem: ActorSystem[?], timeout: Timeout, ec: ExecutionContext):
-      Flow[String, String, NotUsed] = ???
+  Flow[String, String, NotUsed] = {
+    ???
+  }
 
   //
   // Bulk Measurements Service
@@ -66,7 +87,15 @@ def ioTApp(): Unit =
   // to send messages through the selected Flow. Measures throughput using the MeasureUtil.
   //
 
+  // Version 1
+//  val server: Server = ServerSimulator(NR_MESSAGES, MESSAGES_PER_SECOND).withTracing()
+//  val done = server.handleMessages(identityService())
+//  Await.ready(done, Duration.Inf)
 
+  // Version 2
+  val server: Server = ServerSimulator(NR_MESSAGES, MESSAGES_PER_SECOND).withTracing()
+  val done = server.handleMessages(simpleMeasurementsService())
+  Await.ready(done, Duration.Inf)
 
   //
   // Terminate the actor system
