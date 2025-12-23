@@ -24,7 +24,9 @@ object WeatherStation:
         command match
           case GenerateMeasurements =>
             val temp: Double = Random.nextDouble() * (maxTemperature - minTemperature) + minTemperature
-            measurementProcessor ! Measurement(Instant.now(), temp)
+            val time = Instant.now()
+            println(s"produce: {$time, $temp}, ${Thread.currentThread.threadId}")
+            measurementProcessor ! Measurement(time, temp)
             Behaviors.same
       }
     }

@@ -17,7 +17,7 @@ object DataStorageStreamIo:
 
       val queue = Source
         .queue[ByteString](bufferSize = 128)
-        .throttle(1000, 1.second)
+        .throttle(1, 1.second)
         .to(
           FileIO.toPath(
             Paths.get(filePath)
@@ -26,9 +26,9 @@ object DataStorageStreamIo:
         .run()
 
       Behaviors.receiveMessage { message =>
-        println(s"store: {${message.timestamp}, ${message.measurement}}")
+        println(s"store: {${message.timestamp}, ${message.measurement}}, ${Thread.currentThread.threadId}")
 
-        queue.offer(ByteString(s"${message.timestamp}, ${message.measurement}\n"))
+        queue.offer(ByteString(s"${message.timestamp}, ${message.measurement}, ${Thread.currentThread.threadId}\n"))
 
         Behaviors.same
       }

@@ -1,0 +1,2 @@
+If the throttle limit is exceeded teh messages will be stored in the queue and the storage will be delayed. The backpressure is not forwarded to the weather station.
+If the backpressure is forwarded the station does not produce more messages than the consumers can handle
