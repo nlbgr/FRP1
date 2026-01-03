@@ -1,0 +1,7 @@
+1) see logs
+
+2) The streams apply back preassure automatically, and wait till a new message can be consumed by the next stage
+
+3)  Streams are a dataflow pipeline and the flow is data driven and not message driven.
+    An actor reacts to messages, while a stream defines how data flows
+    Actors run parallel to each other, while in streams the pipeline stages may be concurrent but not per default
